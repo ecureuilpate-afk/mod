@@ -3,14 +3,24 @@ package moi.fusion_mod.social;
 import net.minecraft.network.chat.Component;
 
 public class ChatFilter {
-    public static boolean shouldAllowChat(Component message, java.util.UUID sender) {
-        String text = message.getString();
-        // Remove "Party Translator" spam
-        return !text.contains("Party Translator:");
-    }
 
-    public static boolean shouldAllowGame(Component message, boolean overlay) {
-        String text = message.getString();
-        return !text.contains("Party Translator:");
+    /**
+     * Examines a chat message and determines whether to allow rendering to the
+     * client log.
+     * Logic extracted based on SkyHanni concept blocks.
+     * 
+     * @param message   The message component from chat
+     * @param isOverlay True if actionbar overlay
+     * @return false to cancel the event, true to proceed
+     */
+    public static boolean shouldAllowGame(Component message, boolean isOverlay) {
+        String rawText = message.getString();
+
+        // Filter specified Party Translator spam
+        if (rawText.contains("Party Translator")) {
+            return false;
+        }
+
+        return true;
     }
 }
