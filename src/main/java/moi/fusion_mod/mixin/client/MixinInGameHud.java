@@ -18,6 +18,6 @@ public class MixinInGameHud {
     @Inject(method = "render", at = @At("RETURN"))
     public void onRender(GuiGraphics guiGraphics, DeltaTracker deltaTracker, CallbackInfo ci) {
         // Render custom HUDs
-        // JarvisGuiManager.render(guiGraphics, deltaTracker.getGameTimeDeltaTicks());
+        JarvisGuiManager.render(guiGraphics, deltaTracker.getGameTimeDeltaTicks());
     }
 }
