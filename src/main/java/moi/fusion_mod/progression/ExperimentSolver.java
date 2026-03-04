@@ -1,64 +1,121 @@
 package moi.fusion_mod.progression;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import moi.fusion_mod.ui.layout.JarvisGuiManager;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ExperimentSolver {
 
-    // Extracted EXACTLY from de.hysky.skyblocker.skyblock.experiment.ChronomatronSolver
-    public static final Object2ObjectMap<Item, Item> TERRACOTTA_TO_GLASS = Object2ObjectMap.ofEntries(
-            Object2ObjectMap.entry(Items.RED_TERRACOTTA, Items.RED_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.ORANGE_TERRACOTTA, Items.ORANGE_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.YELLOW_TERRACOTTA, Items.YELLOW_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.LIME_TERRACOTTA, Items.LIME_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.GREEN_TERRACOTTA, Items.GREEN_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.CYAN_TERRACOTTA, Items.CYAN_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.LIGHT_BLUE_TERRACOTTA, Items.LIGHT_BLUE_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.BLUE_TERRACOTTA, Items.BLUE_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.PURPLE_TERRACOTTA, Items.PURPLE_STAINED_GLASS),
-            Object2ObjectMap.entry(Items.PINK_TERRACOTTA, Items.PINK_STAINED_GLASS)
-    );
+    private static final Map<Item, Item> TERRACOTTA_TO_GLASS = Map.of(
+            Items.RED_TERRACOTTA, Items.RED_STAINED_GLASS,
+            Items.ORANGE_TERRACOTTA, Items.ORANGE_STAINED_GLASS,
+            Items.YELLOW_TERRACOTTA, Items.YELLOW_STAINED_GLASS,
+            Items.LIME_TERRACOTTA, Items.LIME_STAINED_GLASS,
+            Items.GREEN_TERRACOTTA, Items.GREEN_STAINED_GLASS,
+            Items.CYAN_TERRACOTTA, Items.CYAN_STAINED_GLASS,
+            Items.LIGHT_BLUE_TERRACOTTA, Items.LIGHT_BLUE_STAINED_GLASS,
+            Items.BLUE_TERRACOTTA, Items.BLUE_STAINED_GLASS,
+            Items.PURPLE_TERRACOTTA, Items.PURPLE_STAINED_GLASS,
+            Items.PINK_TERRACOTTA, Items.PINK_STAINED_GLASS);
 
-    // Adapted generic state representation from de.hysky.skyblocker.skyblock.experiment.ExperimentSolver
-    public enum State {
-        REMEMBER, WAIT, SHOW, END
+    private static final List<Item> chronomatronSlots = new ArrayList<>();
+    private static int memoryPhaseLength;
+    private static int currentGlowingSlot;
+    private static int clickIndex;
+    private static boolean isSolving;
+
+    public static void onScreenRender(AbstractContainerScreen<?> screen, GuiGraphics context) {
+        if (screen == null || screen.getTitle() == null)
+            return;
+        String title = screen.getTitle().getString();
+
+        if (title.contains("Chronomatron")) {
+            handleChronomatron(screen, context);
+        } else if (title.contains("Ultrasequencer")) {
+            // Placeholder for Ultrasequencer logic
+            // Add full sequence memorization here as ported from Skyblocker
+            // UltrasequencerSolver
+        }
     }
 
-    private static State state = State.REMEMBER;
-    private static final List<Item> chronomatronSlots = new ArrayList<>();
-    private static int chronomatronCurrentOrdinal = 0;
+    private static void handleChronomatron(AbstractContainerScreen<?> screen, GuiGraphics context) {
+        boolean isSingleRow = titleMatchesSingleRow(screen.getTitle().getString());
+        int maxIndex = isSingleRow ? 25 : 34;
 
-    public static void onScreenRender(AbstractContainerScreen<?> screen, GuiGraphics graphics) {
-        String title = screen.getTitle().getString();
-        
-        if (title.contains("Chronomatron")) {
-            // Rendering logic extracted and adapted from ChronomatronSolver
-            if (state == State.SHOW && chronomatronSlots.size() > chronomatronCurrentOrdinal) {
-                Item nextItem = chronomatronSlots.get(chronomatronCurrentOrdinal);
-                
-                for (Slot slot : screen.getMenu().slots) {
+        Slot timerSlot = screen.getMenu().slots.get(49);
+        boolean isTimer = timerSlot != null && timerSlot.getItem().getHoverName().getString().startsWith("Timer:");
+
+        if (!isTimer) {
+            // We are in "Remember the pattern!" phase
+            isSolving = false;
+
+            // Loop through center slots
+            for (int i = 17; i <= maxIndex; i++) {
+                Slot slot = screen.getMenu().slots.get(i);
+                if (slot != null && slot.hasItem()) {
                     ItemStack stack = slot.getItem();
-                    if (stack.is(nextItem) || TERRACOTTA_TO_GLASS.get(stack.getItem()) == nextItem) {
-                        // In skyblocker they use custom ColorHighlight. Here we draw directly.
-                        int guiLeft = (screen.width - screen.getImageWidth()) / 2;
-                        int guiTop = (screen.height - screen.getImageHeight()) / 2;
-                        int x = guiLeft + slot.x;
-                        int y = guiTop + slot.y;
-                        
-                        // Render green highlight over the correct slot
-                        graphics.fill(x, y, x + 16, y + 16, 0x8000FF00);
+                    // Detect shiny block
+                    if (stack.hasFoil()) {
+                        if (currentGlowingSlot == 0) {
+                            if (chronomatronSlots.size() <= memoryPhaseLength) {
+                                chronomatronSlots
+                                        .add(TERRACOTTA_TO_GLASS.getOrDefault(stack.getItem(), stack.getItem()));
+                            } else {
+                                memoryPhaseLength++;
+                            }
+                            currentGlowingSlot = i;
+                        }
+                    } else if (currentGlowingSlot == i && !stack.hasFoil()) {
+                        currentGlowingSlot = 0; // Finished glowing
                     }
                 }
             }
-        } else if (title.contains("Ultrasequencer")) {
-            // Outline for Ultrasequencer logic
+        } else {
+            // We are in the "Your turn!" clicking phase
+            isSolving = true;
+            if (chronomatronSlots.size() > clickIndex) {
+                Item target = chronomatronSlots.get(clickIndex);
+
+                // Highlight correct slot green
+                for (int i = 17; i <= maxIndex; i++) {
+                    Slot slot = screen.getMenu().slots.get(i);
+                    if (slot != null && slot.hasItem()) {
+                        ItemStack stack = slot.getItem();
+                        if (stack.is(target) || TERRACOTTA_TO_GLASS.get(stack.getItem()) == target) {
+                            context.fill(slot.x, slot.y, slot.x + 16, slot.y + 16, 0x8000FF00);
+                        }
+                    }
+                }
+            }
         }
+    }
+
+    private static boolean titleMatchesSingleRow(String title) {
+        return title.endsWith("(High)") || title.endsWith("(Grand)") || title.endsWith("(Supreme)");
+    }
+
+    public static void onClickSlot(Slot slot, ItemStack stack) {
+        if (isSolving && chronomatronSlots.size() > clickIndex) {
+            Item target = chronomatronSlots.get(clickIndex);
+            if (stack.is(target) || TERRACOTTA_TO_GLASS.get(stack.getItem()) == target) {
+                clickIndex++;
+            }
+        }
+    }
+
+    public static void resetMemory() {
+        chronomatronSlots.clear();
+        memoryPhaseLength = 0;
+        clickIndex = 0;
+        currentGlowingSlot = 0;
+        isSolving = false;
     }
 }
