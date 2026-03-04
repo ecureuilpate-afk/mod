@@ -25,7 +25,9 @@ public class JarvisGuiManager {
     public static void initializeHuds() {
         // Register all HUD implementations here
         huds.add(new moi.fusion_mod.ui.hud.CommissionHud());
-        // Other HUDs like DrillFuelBarHud can be added here
+        huds.add(new moi.fusion_mod.ui.hud.DrillFuelBarHud());
+        huds.add(new moi.fusion_mod.ui.hud.PickobulusTimerHud());
+        huds.add(new moi.fusion_mod.ui.hud.ItemPickupLogHud());
     }
 
     // Called from MixinInGameHud
