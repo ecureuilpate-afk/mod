@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "moi.fusion_mod.mixin.client",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "MixinInGameHud",
+    "MixinMouse",
+    "MixinKeyboard",
+    "MixinChatListener",
+    "MixinHandledScreen"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

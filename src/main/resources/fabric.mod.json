@@ -1,0 +1,41 @@
+{
+	"schemaVersion": 1,
+	"id": "fusion_mod",
+	"version": "${version}",
+	"name": "fusion_mod",
+	"description": "This is an example description! Tell everyone what your mod is about!",
+	"authors": [
+		"Me!"
+	],
+	"contact": {
+		"homepage": "https://fabricmc.net/",
+		"sources": "https://github.com/FabricMC/fabric-example-mod"
+	},
+	"license": "CC0-1.0",
+	"icon": "assets/fusion_mod/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"moi.fusion_mod.Fusion_mod"
+		],
+		"client": [
+			"moi.fusion_mod.Fusion_modClient"
+		],
+		"fabric-datagen": [
+			"moi.fusion_mod.Fusion_modDataGenerator"
+		]
+	},
+	"mixins": [
+		"fusion_mod.mixins.json",
+		{
+			"config": "fusion_mod.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.18.4",
+		"minecraft": "~1.21.10",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}
